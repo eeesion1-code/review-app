@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR评价</title>
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="QR评价">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f3ede2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1814" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&display=swap">
+<style>
+/* 版式：手机一列 —— 顶栏（店名・更新）/ 期间切换 / 4 个数字 / 今日扫码（实时）/ 按桌 / 每天 / 最新 QR 评价。
+   配色同桌上 QR 卡的「いろり」：和纸、炭、栗木，炭火色只用在提醒上 */
+:root {
+  --bg: #f3ede2; --card: #fbf8f2; --ink: #231d17; --sub: #7d7263; --line: #e2d8c7;
+  --kuri: #7b5636; --accent: #8a5a2e; --hi: #c4602b; --ok: #3f7d4e; --bad: #b8432f; --bar: #b9885a;
+  --f-mincho: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-ui: -apple-system, "Hiragino Sans", "PingFang SC", "Microsoft YaHei", "Yu Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1c1814; --card: #25201a; --ink: #efe6d3; --sub: #a89d8c; --line: #3a3128;
+  --kuri: #9a7048; --accent: #d6a46c; --hi: #e07a43; --ok: #7fbf8c; --bad: #ec7a63; --bar: #a7794c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #1c1814; --card: #25201a; --ink: #efe6d3; --sub: #a89d8c; --line: #3a3128;
+  --kuri: #9a7048; --accent: #d6a46c; --hi: #e07a43; --ok: #7fbf8c; --bad: #ec7a63; --bar: #a7794c; color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font: 14px/1.5 var(--f-ui); -webkit-text-size-adjust: 100%;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.wrap { max-width: 680px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; align-items: center; gap: 10px; }
+header h1 { font-family: var(--f-mincho); font-size: 21px; letter-spacing: .06em; }
+header .sp { flex: 1; }
+.btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 7px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+.btn:focus-visible, .seg button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.meta { color: var(--sub); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.meta b { font-weight: 500; color: var(--ink); }
+select { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); width: 100%; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; color: var(--sub); font: inherit; padding: 8px; border-radius: 7px; cursor: pointer; }
+.seg button.on { background: var(--ink); color: var(--bg); font-weight: 600; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 560px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.kpi .l { font-size: 12px; color: var(--sub); }
+.kpi .v { font-family: var(--f-mincho); font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.kpi .v small { font-size: 14px; color: var(--sub); font-family: var(--f-ui); font-weight: 400; margin-left: 2px; }
+.alert { display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--bad) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line));
+  color: var(--ink); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+.alert i { width: 8px; height: 8px; border-radius: 50%; background: var(--bad); flex: none; }
+h2 { font-family: var(--f-mincho); font-size: 16px; letter-spacing: .05em; display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+h2 small { font-family: var(--f-ui); font-size: 12px; color: var(--sub); font-weight: 400; letter-spacing: 0; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.row { display: grid; grid-template-columns: 52px 66px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.row:last-child { border-bottom: 0; }
+.row .tm { color: var(--sub); }
+.row .tb { font-family: var(--f-mincho); font-weight: 700; font-size: 15px; }
+.row .x { color: var(--sub); font-size: 12px; }
+.pill { font-size: 12px; padding: 3px 9px; border-radius: 99px; white-space: nowrap; border: 1px solid var(--line); color: var(--sub); }
+.pill.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.pill.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 12px; color: var(--sub); font-weight: 400; }
+th:first-child, td:first-child { text-align: left; }
+td .bar { display: inline-block; height: 7px; border-radius: 4px; background: var(--bar); vertical-align: middle; margin-left: 6px; }
+.rv { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.rv:last-child { border-bottom: 0; }
+.rv.low { box-shadow: inset 3px 0 0 var(--bad); }
+.rv .h { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--sub); flex-wrap: wrap; }
+.rv .st { color: var(--hi); letter-spacing: 1px; }
+.rv .who { color: var(--ink); font-weight: 500; }
+.rv .t { white-space: pre-wrap; word-break: break-word; }
+.empty { padding: 18px 14px; color: var(--sub); text-align: center; font-size: 13px; line-height: 1.7; }
+.foot { color: var(--sub); font-size: 12px; line-height: 1.8; text-align: center; padding-top: 4px; }
+.err { color: var(--bad); font-size: 13px; }
+/* 输入密钥 */
+.gate { max-width: 360px; margin: 18vh auto 0; display: grid; gap: 12px; text-align: center; }
+.gate h1 { font-family: var(--f-mincho); font-size: 24px; letter-spacing: .08em; }
+.gate p { color: var(--sub); font-size: 13px; }
+.gate input { font: inherit; font-size: 16px; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-align: center; }
+.gate .btn { padding: 11px; font-size: 15px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .spin { animation: spin 1s linear infinite; display: inline-block; } @keyframes spin { to { transform: rotate(360deg); } } }
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzsjsanQpjfDDHI3n2qdwbZwZneBUK6KTa3pA5SrNubG2pMtSqWYTQ-8BsHITGA8RqS/exec';
+const KANJI = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('qr_' + k); return v == null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('qr_' + k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('qr_' + k); } catch (e) {} }
+};
+// 密钥：网址里的 #k=…，第一次带进来就记在这台手机上，网址上的去掉（加到主屏幕后 iPhone 要在 APP 里再输一次）
+let K = LS.get('k', '');
+const fromUrl = (location.hash.match(/k=([^&]+)/) || [])[1];
+if (fromUrl) { K = decodeURIComponent(fromUrl); LS.set('k', K); history.replaceState(null, '', location.pathname); }
+
+let D = null, per = LS.get('per', 'today'), cur = LS.get('store', ''), busy = false, err = '';
+try { const c = JSON.parse(LS.get('cache', 'null')); if (c && c.ok) D = c; } catch (e) {}
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+const avg = (s, n) => n ? (s / n).toFixed(1) : '–';
+const tk = t => /^\d+$/.test(t) && KANJI[+t] ? KANJI[+t] + '番' : esc(t);
+const hm = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const isToday = ms => new Date(ms).toDateString() === new Date().toDateString();
+
+function gate(msg) {
+  $('app').innerHTML = `<div class="gate"><h1>QR评价</h1><p>输入管理密钥（只要输一次，会记在这台手机上）</p>
+    <input id="kin" type="password" autocomplete="off" placeholder="管理密钥" value="">
+    <button class="btn" id="kok">打开</button><div class="err" id="kerr">${esc(msg || '')}</div></div>`;
+  const go = () => { const v = $('kin').value.trim(); if (!v) return; K = v; LS.set('k', K); load(true); };
+  $('kok').onclick = go; $('kin').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+
+function load(first) {
+  if (!K) return gate();
+  if (busy) return; busy = true; err = '';
+  if (D) render(); else $('app').innerHTML = '<div class="gate"><p><span class="spin">◌</span> 读取中…</p></div>';
+  fetch(API + '?fmt=json&k=' + encodeURIComponent(K) + '&_=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.json())
+    .then(d => {
+      busy = false;
+      if (!d.ok) { if (d.err === 'key') { LS.del('k'); LS.del('cache'); K = ''; D = null; return gate(first ? '密钥不对，请重新输入' : '密钥已失效，请重新输入'); } throw new Error(d.err || '读取失败'); }
+      D = d; LS.set('cache', JSON.stringify(d)); render();
+    })
+    .catch(e => { busy = false; err = '没读到最新数据（' + (e.message || '网络') + '），显示的是上次的数据'; D ? render() : gate(err); });
+}
+
+function storesOf(d) {
+  const m = new Map();
+  (d.stores || []).forEach(s => m.set(s.code, s.name));
+  (d.groups || []).forEach(g => { if (!m.has(g.store)) m.set(g.store, g.store); });
+  return [...m].map(([code, name]) => ({ code, name }));
+}
+
+function render() {
+  const d = D, list = storesOf(d);
+  if (!list.find(s => s.code === cur)) cur = list[0] ? list[0].code : '';
+  const S = (d.stores || []).find(s => s.code === cur);
+  const p = S ? S.p[per] : { grp: 0, qr: 0, star: 0, low: 0 };
+  const name = list.find(s => s.code === cur)?.name || '権兵衛のいろり屋 大宮店';
+  const groups = (d.groups || []).filter(g => g.store === cur && isToday(g.t));
+  const reviews = (d.recent || []).filter(r => (r.code ? r.code === cur : r.store === name));
+  const tables = S ? Object.keys(S.tables).sort((a, b) => (+a - +b) || a.localeCompare(b)) : [];
+  const days = S ? Object.keys(S.days).sort().reverse() : [];
+  const mx = Math.max(1, ...tables.map(t => S.tables[t].grp));
+  const PER = { today: '今天', d7: '7 天', d30: '30 天' };
+
+  $('app').innerHTML = `
+  <header><h1>QR评价</h1><span class="sp"></span><button class="btn" id="rf">${busy ? '<span class="spin">↻</span>' : '↻'} 刷新</button></header>
+  ${list.length > 1 ? `<select id="st">${list.map(s => `<option value="${esc(s.code)}"${s.code === cur ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : ''}
+  <div class="meta"><span><b>${esc(name)}</b></span><span>数据更新 ${esc((d.updated || '').slice(5))}</span><span>Google 评价上次读取 ${esc((d.lastRead || '还没读过').slice(5))}</span></div>
+  ${err ? `<div class="err">${esc(err)}</div>` : ''}
+  <div class="seg" role="tablist">${Object.keys(PER).map(k => `<button role="tab" data-p="${k}" class="${k === per ? 'on' : ''}" aria-selected="${k === per}">${PER[k]}</button>`).join('')}</div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">扫码组数</div><div class="v">${p.grp}<small>组</small></div></div>
+    <div class="kpi"><div class="l">QR 评价</div><div class="v">${p.qr}<small>条</small></div></div>
+    <div class="kpi"><div class="l">转化率</div><div class="v">${pct(p.qr, p.grp)}</div></div>
+    <div class="kpi"><div class="l">平均星级</div><div class="v">${avg(p.star, p.qr)}</div></div>
+  </div>
+  ${p.low ? `<div class="alert"><i></i>${PER[per]}有 ${p.low} 条 3 星以下的 QR 评价，请看下面的内容</div>` : ''}
+
+  <section><h2>今天扫码 <small>实时 · 每组只算一次（同桌 30 分钟内）</small></h2><div class="box">
+    ${groups.length ? groups.map(g => `<div class="row"><span class="tm">${hm(g.t)}</span><span class="tb">${tk(g.table)}</span>
+      <span class="x">${g.n > 1 ? '扫了 ' + g.n + ' 次' : ''}</span>
+      ${g.star != null ? `<span class="pill ${g.star <= 3 ? 'bad' : 'ok'}">已写评价 ${'★'.repeat(g.star)}</span>` : `<span class="pill">等评价</span>`}</div>`).join('')
+      : '<div class="empty">今天还没有客人扫码</div>'}
+  </div></section>
+
+  <section><h2>最新 QR 评价 <small>扫码后写的 Google 评价</small></h2><div class="box">
+    ${reviews.length ? reviews.map(r => `<div class="rv${r.star && r.star <= 3 ? ' low' : ''}">
+      <div class="h"><span><span class="st">${'★'.repeat(r.star || 0)}</span> <span class="who">${esc(r.who)}</span></span><span>${esc(r.time)} · ${tk(r.table)}卓 · 扫码后 ${esc(r.mins)} 分</span></div>
+      <div class="t">${esc(r.text)}</div></div>`).join('')
+      : '<div class="empty">还没有 QR 评价<br>Google 评价每天 0:00、11:00 读取一次，读到后和扫码配对</div>'}
+  </div></section>
+
+  <section><h2>按桌 <small>30 天</small></h2><div class="box scroll"><table>
+    <tr><th>桌</th><th>扫码组</th><th>评价</th><th>转化率</th><th>平均星</th></tr>
+    ${tables.length ? tables.map(t => { const o = S.tables[t]; return `<tr><td>${tk(t)}<span class="bar" style="width:${Math.round(o.grp / mx * 56)}px"></span></td><td>${o.grp}</td><td>${o.qr}</td><td>${pct(o.qr, o.grp)}</td><td>${avg(o.star, o.qr)}</td></tr>`; }).join('')
+      : '<tr><td colspan="5" class="empty">还没有数据</td></tr>'}
+  </table></div></section>
+
+  <section><h2>每天 <small>30 天</small></h2><div class="box scroll"><table>
+    <tr><th>日期</th><th>扫码组</th><th>评价</th><th>转化率</th></tr>
+    ${days.length ? days.map(k => { const o = S.days[k]; return `<tr><td>${esc(k.slice(5).replace('-', '/'))}</td><td>${o.grp}</td><td>${o.qr}</td><td>${pct(o.qr, o.grp)}</td></tr>`; }).join('')
+      : '<tr><td colspan="4" class="empty">还没有数据</td></tr>'}
+  </table></div></section>
+
+  <p class="foot">只统计扫了桌上 QR 的客人 · 扫码后 2 小时内写的评价算 QR 评价<br>每 2 分钟自动刷新</p>`;
+
+  $('rf').onclick = () => load();
+  if ($('st')) $('st').onchange = e => { cur = e.target.value; LS.set('store', cur); render(); };
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { per = b.dataset.p; LS.set('per', per); render(); });
+}
+
+load(true);
+setInterval(() => { if (document.visibilityState === 'visible' && K) load(); }, 120000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && K) load(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

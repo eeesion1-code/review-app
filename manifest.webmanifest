@@ -1,0 +1,16 @@
+{
+  "name": "QR评价",
+  "short_name": "QR评价",
+  "description": "桌上 QR 的扫码组数和扫码后写的 Google 评价",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3ede2",
+  "theme_color": "#1c1814",
+  "lang": "zh-CN",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
